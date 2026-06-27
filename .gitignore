@@ -1,0 +1,7 @@
+su/node_modules/
+su/dist/
+/.vercel/
+su/.env.local
+su/.vercel/
+su/.claude/
+su/*.tsbuildinfo
