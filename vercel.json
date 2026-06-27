@@ -1,5 +1,11 @@
 {
   "installCommand": "cd su && npm install",
   "buildCommand": "cd su && npm run build",
-  "outputDirectory": "su/dist"
+  "outputDirectory": "su/dist",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
 }

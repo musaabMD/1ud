@@ -1,4 +1,4 @@
-import type { User } from "@supabase/supabase-js";
+import type { EmailOtpType, User } from "@supabase/supabase-js";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ArrowLeft, BarChart3, BookOpen, Check, ChevronRight, Flag,
@@ -66,6 +66,15 @@ function examColor(name: string) {
 function isRecoveryRedirect() {
   if (typeof window === "undefined") return false;
   return new URLSearchParams(window.location.hash.replace(/^#/, "")).get("type") === "recovery";
+}
+
+function getRecoveryOtpRedirect() {
+  if (typeof window === "undefined") return null;
+  const url = new URL(window.location.href);
+  const tokenHash = url.searchParams.get("token_hash");
+  const type = url.searchParams.get("type") as EmailOtpType | null;
+  if (!tokenHash || type !== "recovery") return null;
+  return { tokenHash, type };
 }
 
 const FEATURES = [
@@ -862,8 +871,22 @@ export default function DrnoteApp() {
   // Auth
   useEffect(() => {
     if (!supabase) { setAuthLoading(false); return; }
-    if (isRecoveryRedirect()) setShowRecovery(true);
-    supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthLoading(false); });
+    const recoveryOtp = getRecoveryOtpRedirect();
+    if (recoveryOtp) {
+      supabase.auth
+        .verifyOtp({ token_hash: recoveryOtp.tokenHash, type: recoveryOtp.type })
+        .then(({ data, error }) => {
+          if (!error) {
+            setUser(data.user ?? data.session?.user ?? null);
+            setShowRecovery(true);
+            window.history.replaceState({}, document.title, "/");
+          }
+          setAuthLoading(false);
+        });
+    } else {
+      if (isRecoveryRedirect()) setShowRecovery(true);
+      supabase.auth.getSession().then(({ data }) => { setUser(data.session?.user ?? null); setAuthLoading(false); });
+    }
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       if (event === "PASSWORD_RECOVERY") setShowRecovery(true);
