@@ -385,7 +385,26 @@ function QuestionRunner({ session, statesById, onClose, onSave }: {
     setAnswers(next);
     setI(session.initialIndex ?? 0);
     setReport(false);
-  }, [session, statesById]);
+  }, [session]);
+
+  useEffect(() => {
+    setAnswers((prev) => {
+      const next = { ...prev };
+      for (const q of session.questions) {
+        const state = statesById[q.id];
+        if (!state) {
+          next[q.id] ??= { selected_choice: null, is_correct: null, is_flagged: false };
+          continue;
+        }
+        next[q.id] = {
+          selected_choice: state.selected_choice ?? null,
+          is_correct: state.is_correct ?? null,
+          is_flagged: state.is_flagged ?? false,
+        };
+      }
+      return next;
+    });
+  }, [session.questions, statesById]);
 
   const q = session.questions[i];
   const answer = q ? answers[q.id] : undefined;
